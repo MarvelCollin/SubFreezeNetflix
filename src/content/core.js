@@ -9,7 +9,7 @@
     menuClass: 'subfreeze-secondary-menu',
     subMenuSelector: 'div[data-uia="selector-audio-subtitle"]',
     renderInterval: 150,
-    wheelCooldown: 120,
+    wheelCooldown: 220,
     minScale: 2,
     maxScale: 9
   };

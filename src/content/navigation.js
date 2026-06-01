@@ -11,7 +11,7 @@
   SF.jump = function (delta) {
     const video = document.querySelector('video');
     if (!video) return;
-    video.currentTime = Math.max(0, video.currentTime + delta);
+    SF.seekTo(video.currentTime + delta);
   };
 
   function seekSubtitle(dir) {
@@ -22,14 +22,14 @@
     const t = video.currentTime;
     if (dir > 0) {
       const next = cues.find(function (c) { return c.start > t + 0.05; });
-      if (next) video.currentTime = next.start;
+      if (next) SF.seekTo(next.start);
     } else {
       let prev = null;
       for (let i = 0; i < cues.length; i++) {
         if (cues[i].start < t - 0.4) prev = cues[i];
         else break;
       }
-      if (prev) video.currentTime = prev.start;
+      if (prev) SF.seekTo(prev.start);
     }
   }
 
@@ -53,7 +53,10 @@
         e.clientY < rect.top || e.clientY > rect.bottom) return;
       e.preventDefault();
       const now = Date.now();
-      if (now - lastWheel < SF.config.wheelCooldown) return;
+      if (now - lastWheel < SF.config.wheelCooldown) {
+        lastWheel = now;
+        return;
+      }
       lastWheel = now;
       seekSubtitle(e.deltaY > 0 ? 1 : -1);
     }, { passive: false });

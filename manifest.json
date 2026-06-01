@@ -17,6 +17,7 @@
       "js": [
         "src/content/core.js",
         "src/content/parser.js",
+        "src/content/player.js",
         "src/content/subtitles.js",
         "src/content/navigation.js",
         "src/content/overlay.js",
