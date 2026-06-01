@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "SubFreeze Netflix Dual Subtitles",
+  "version": "1.0.0",
+  "description": "Show two custom subtitle tracks at the same time on Netflix.",
+  "content_scripts": [
+    {
+      "matches": ["https://www.netflix.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
