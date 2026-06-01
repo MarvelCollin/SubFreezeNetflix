@@ -28,7 +28,7 @@
     '<div class="sf-section">' +
     '<div class="sf-section-title">Dictionary</div>' +
     '<label class="sf-row"><span>Translate to</span><select class="sf-lang"></select></label>' +
-    '<div class="sf-words-actions"><button class="sf-flashcard-btn" type="button">&#9733; Flash Cards</button><button class="sf-export-btn" type="button">&#8595; Anki</button><button class="sf-clear" type="button">&#10005; Clear</button></div>' +
+    '<div class="sf-words-actions"><button class="sf-quiz-btn" type="button">Quiz</button><button class="sf-stats-btn" type="button">Stats</button><button class="sf-flashcard-btn" type="button">Cards</button><button class="sf-export-btn" type="button">Anki</button><button class="sf-clear" type="button">Clear All</button></div>' +
     '<div class="sf-words"></div>' +
     '</div>' +
     '</div>';
@@ -112,12 +112,20 @@
       SF.saveSettings();
     });
     ui.panel.querySelector('.sf-clear').addEventListener('click', function () {
-      SF.savedWords = [];
-      SF.saveWords();
-      SF.renderWordList();
+      SF.showConfirmModal('Clear all saved words?', 'This cannot be undone.', function () {
+        SF.savedWords = [];
+        SF.saveWords();
+        SF.renderWordList();
+      });
     });
     ui.panel.querySelector('.sf-flashcard-btn').addEventListener('click', function () {
       SF.openFlashCards();
+    });
+    ui.panel.querySelector('.sf-quiz-btn').addEventListener('click', function () {
+      SF.openQuiz();
+    });
+    ui.panel.querySelector('.sf-stats-btn').addEventListener('click', function () {
+      SF.openStats();
     });
     ui.panel.querySelector('.sf-export-btn').addEventListener('click', function () {
       SF.exportAnki();
