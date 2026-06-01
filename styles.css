@@ -6,12 +6,12 @@
   flex-direction: column;
   justify-content: flex-end;
   align-items: center;
-  padding-bottom: 7%;
+  padding-bottom: 6%;
   box-sizing: border-box;
 }
 
 .sf-line {
-  max-width: 90%;
+  max-width: 92%;
   text-align: center;
   color: #ffffff;
   white-space: pre-line;
@@ -77,25 +77,20 @@
   opacity: 0.85;
 }
 
-.sf-row input[type="file"] {
-  font-size: 11px;
-  color: #ffffff;
-}
-
-.sf-row input[type="number"] {
-  width: 70px;
+.sf-row select {
   background: #2b2b2b;
   color: #ffffff;
   border: 1px solid #444;
   border-radius: 4px;
-  padding: 3px 6px;
+  padding: 4px 6px;
+  font-size: 12px;
 }
 
 .sf-toggle-row {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0;
+  margin-bottom: 8px;
 }
 
 .sf-launcher {

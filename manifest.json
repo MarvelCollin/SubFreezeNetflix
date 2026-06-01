@@ -1,14 +1,25 @@
 {
   "manifest_version": 3,
   "name": "SubFreeze Netflix Dual Subtitles",
-  "version": "1.0.0",
-  "description": "Show two custom subtitle tracks at the same time on Netflix.",
+  "version": "2.0.0",
+  "description": "Show two Netflix subtitle languages at the same time. Just pick two languages.",
   "content_scripts": [
     {
       "matches": ["https://www.netflix.com/*"],
       "js": ["content.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://www.netflix.com/*"],
       "css": ["styles.css"],
-      "run_at": "document_idle"
+      "run_at": "document_start"
     }
-  ]
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "subfreeze-netflix@local",
+      "strict_min_version": "128.0"
+    }
+  }
 }

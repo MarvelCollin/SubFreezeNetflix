@@ -3,66 +3,63 @@
   window.__subFreezeLoaded = true;
 
   const state = {
-    tracks: [[], []],
-    offsets: [0, 0],
+    tracks: [],
+    selected: [null, null],
+    selectedLang: [null, null],
+    cues: [[], []],
+    cache: {},
+    tracksDirty: false,
     fontSize: 28,
-    enabled: true
+    enabled: true,
+    hideNetflix: true,
+    collapsed: false
   };
 
-  function parseTimestamp(value) {
-    const t = value.trim().replace(',', '.');
-    const parts = t.split(':');
-    let h = 0;
-    let m = 0;
-    let s = 0;
-    if (parts.length === 3) {
-      h = parseInt(parts[0], 10);
-      m = parseInt(parts[1], 10);
-      s = parseFloat(parts[2]);
-    } else if (parts.length === 2) {
-      m = parseInt(parts[0], 10);
-      s = parseFloat(parts[1]);
-    } else {
-      s = parseFloat(parts[0]);
+  function ttmlTime(value) {
+    if (!value) return 0;
+    const t = String(value).trim();
+    if (t.indexOf(':') !== -1) {
+      const parts = t.split(':');
+      const h = parseFloat(parts[0]) || 0;
+      const m = parseFloat(parts[1]) || 0;
+      const s = parseFloat(parts[2]) || 0;
+      return h * 3600 + m * 60 + s;
     }
-    if (isNaN(h)) h = 0;
-    if (isNaN(m)) m = 0;
-    if (isNaN(s)) s = 0;
-    return h * 3600 + m * 60 + s;
+    const num = parseFloat(t);
+    if (isNaN(num)) return 0;
+    return num / 10000000;
   }
 
-  function cleanText(value) {
-    return value
-      .replace(/\{[^}]*\}/g, '')
-      .replace(/<[^>]+>/g, '')
-      .trim();
+  function extractText(node) {
+    let out = '';
+    const kids = node.childNodes;
+    for (let i = 0; i < kids.length; i++) {
+      const n = kids[i];
+      if (n.nodeType === 1) {
+        if (n.nodeName.toLowerCase() === 'br') out += '\n';
+        else out += extractText(n);
+      } else if (n.nodeType === 3) {
+        out += n.nodeValue;
+      }
+    }
+    return out;
   }
 
-  function parseCues(raw) {
-    const normalized = raw.replace(/\r/g, '');
-    const blocks = normalized.split(/\n\s*\n/);
+  function parseTTML(xmlText) {
+    const xml = new DOMParser().parseFromString(xmlText, 'text/xml');
+    const ps = xml.getElementsByTagName('p');
     const cues = [];
-    for (let b = 0; b < blocks.length; b++) {
-      const lines = blocks[b].split('\n');
-      let timeIndex = -1;
-      for (let i = 0; i < lines.length; i++) {
-        if (lines[i].indexOf('-->') !== -1) {
-          timeIndex = i;
-          break;
-        }
-      }
-      if (timeIndex === -1) continue;
-      const pieces = lines[timeIndex].split('-->');
-      if (pieces.length < 2) continue;
-      const start = parseTimestamp(pieces[0]);
-      const end = parseTimestamp(pieces[1].trim().split(/\s+/)[0]);
-      const textLines = [];
-      for (let i = timeIndex + 1; i < lines.length; i++) {
-        const cleaned = cleanText(lines[i]);
-        if (cleaned.length > 0) textLines.push(cleaned);
-      }
-      if (textLines.length === 0) continue;
-      cues.push({ start: start, end: end, text: textLines.join('\n') });
+    for (let i = 0; i < ps.length; i++) {
+      const p = ps[i];
+      const start = ttmlTime(p.getAttribute('begin'));
+      const end = ttmlTime(p.getAttribute('end'));
+      const text = extractText(p)
+        .replace(/[ \t]+\n/g, '\n')
+        .replace(/\n[ \t]+/g, '\n')
+        .replace(/[ \t]{2,}/g, ' ')
+        .trim();
+      if (!text) continue;
+      cues.push({ start: start, end: end, text: text });
     }
     cues.sort(function (a, b) {
       return a.start - b.start;
@@ -77,77 +74,194 @@
     return '';
   }
 
-  function loadFile(input, index) {
-    const file = input.files && input.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function () {
-      state.tracks[index] = parseCues(String(reader.result));
-    };
-    reader.readAsText(file);
+  function isNoneTrack(track) {
+    if (track.isNoneTrack) return true;
+    if (typeof track.new_track_id === 'string' && track.new_track_id.split(';')[4] === '1') return true;
+    if (track.rank !== undefined && track.rank < 0) return true;
+    return false;
   }
 
-  const overlay = document.createElement('div');
-  overlay.className = 'sf-overlay';
-  const line1 = document.createElement('div');
-  line1.className = 'sf-line sf-line1';
-  const line2 = document.createElement('div');
-  line2.className = 'sf-line sf-line2';
-  overlay.appendChild(line1);
-  overlay.appendChild(line2);
+  function getTrackUrls(track) {
+    const downloadables = track.ttDownloadables;
+    if (!downloadables) return null;
+    const keys = Object.keys(downloadables);
+    for (let i = 0; i < keys.length; i++) {
+      const d = downloadables[keys[i]];
+      if (!d || d.isImage) continue;
+      if (d.downloadUrls) return Object.values(d.downloadUrls);
+      if (d.urls) return d.urls.map(function (u) { return u.url; });
+    }
+    return null;
+  }
 
-  const panel = document.createElement('div');
-  panel.className = 'sf-panel';
-  panel.innerHTML =
-    '<div class="sf-head"><span>Dual Subtitles</span><button class="sf-close" type="button">&times;</button></div>' +
-    '<div class="sf-body">' +
-    '<label class="sf-row"><span>Subtitle 1 (.srt / .vtt)</span><input type="file" class="sf-file1" accept=".srt,.vtt"></label>' +
-    '<label class="sf-row"><span>Offset 1 (seconds)</span><input type="number" class="sf-off1" step="0.5" value="0"></label>' +
-    '<label class="sf-row"><span>Subtitle 2 (.srt / .vtt)</span><input type="file" class="sf-file2" accept=".srt,.vtt"></label>' +
-    '<label class="sf-row"><span>Offset 2 (seconds)</span><input type="number" class="sf-off2" step="0.5" value="0"></label>' +
-    '<label class="sf-row"><span>Font size</span><input type="range" class="sf-font" min="14" max="60" value="28"></label>' +
-    '<label class="sf-row sf-toggle-row"><span>Show subtitles</span><input type="checkbox" class="sf-enabled" checked></label>' +
-    '</div>';
+  function buildTrackList(timedtexttracks) {
+    const list = [];
+    for (let i = 0; i < timedtexttracks.length; i++) {
+      const t = timedtexttracks[i];
+      if (isNoneTrack(t)) continue;
+      const urls = getTrackUrls(t);
+      if (!urls || !urls.length) continue;
+      const label = t.languageDescription + (t.rawTrackType === 'closedcaptions' ? ' [CC]' : '');
+      list.push({ id: t.new_track_id, label: label, bcp47: t.language, urls: urls });
+    }
+    return list;
+  }
 
-  const launcher = document.createElement('button');
-  launcher.className = 'sf-launcher';
-  launcher.type = 'button';
-  launcher.textContent = 'DS';
+  function downloadTrack(track) {
+    return fetch(track.urls[0]).then(function (r) {
+      return r.text();
+    }).then(parseTTML);
+  }
 
-  document.body.appendChild(panel);
-  document.body.appendChild(launcher);
-  launcher.style.display = 'none';
+  function selectTrack(slot, id) {
+    if (!id) {
+      state.selected[slot] = null;
+      state.selectedLang[slot] = null;
+      state.cues[slot] = [];
+      return;
+    }
+    const track = state.tracks.find(function (t) { return t.id === id; });
+    if (!track) return;
+    state.selected[slot] = id;
+    state.selectedLang[slot] = track.bcp47;
+    if (state.cache[id]) {
+      state.cues[slot] = state.cache[id];
+      return;
+    }
+    state.cues[slot] = [];
+    downloadTrack(track).then(function (cues) {
+      state.cache[id] = cues;
+      if (state.selected[slot] === id) state.cues[slot] = cues;
+    });
+  }
 
-  panel.querySelector('.sf-file1').addEventListener('change', function (e) {
-    loadFile(e.target, 0);
-  });
-  panel.querySelector('.sf-file2').addEventListener('change', function (e) {
-    loadFile(e.target, 1);
-  });
-  panel.querySelector('.sf-off1').addEventListener('input', function (e) {
-    state.offsets[0] = parseFloat(e.target.value) || 0;
-  });
-  panel.querySelector('.sf-off2').addEventListener('input', function (e) {
-    state.offsets[1] = parseFloat(e.target.value) || 0;
-  });
-  panel.querySelector('.sf-font').addEventListener('input', function (e) {
-    state.fontSize = parseInt(e.target.value, 10) || 28;
-  });
-  panel.querySelector('.sf-enabled').addEventListener('change', function (e) {
-    state.enabled = e.target.checked;
-  });
-  panel.querySelector('.sf-close').addEventListener('click', function () {
-    panel.style.display = 'none';
-    launcher.style.display = 'block';
-  });
-  launcher.addEventListener('click', function () {
-    panel.style.display = 'block';
-    launcher.style.display = 'none';
-  });
+  function handleManifest(result) {
+    const list = buildTrackList(result.timedtexttracks);
+    if (!list.length) return;
+    state.tracks = list;
+    state.tracksDirty = true;
+    for (let slot = 0; slot < 2; slot++) {
+      const lang = state.selectedLang[slot];
+      if (!lang) continue;
+      const match = state.tracks.find(function (t) { return t.bcp47 === lang; });
+      if (match) selectTrack(slot, match.id);
+    }
+  }
+
+  const _parse = JSON.parse;
+  JSON.parse = function () {
+    const result = _parse.apply(this, arguments);
+    if (result && result.result && result.result.movieId && result.result.timedtexttracks) {
+      handleManifest(result.result);
+    }
+    return result;
+  };
+
+  let overlay, line1, line2, panel, launcher, hideStyle, sel1, sel2;
+
+  function ensureUI() {
+    if (overlay) return true;
+    if (!document.body) return false;
+
+    hideStyle = document.createElement('style');
+    (document.head || document.documentElement).appendChild(hideStyle);
+
+    overlay = document.createElement('div');
+    overlay.className = 'sf-overlay';
+    line1 = document.createElement('div');
+    line1.className = 'sf-line sf-line1';
+    line2 = document.createElement('div');
+    line2.className = 'sf-line sf-line2';
+    overlay.appendChild(line1);
+    overlay.appendChild(line2);
+
+    panel = document.createElement('div');
+    panel.className = 'sf-panel';
+    panel.innerHTML =
+      '<div class="sf-head"><span>Dual Subtitles</span><button class="sf-close" type="button">&times;</button></div>' +
+      '<div class="sf-body">' +
+      '<label class="sf-row"><span>Subtitle 1 (white)</span><select class="sf-sel1"></select></label>' +
+      '<label class="sf-row"><span>Subtitle 2 (yellow)</span><select class="sf-sel2"></select></label>' +
+      '<label class="sf-row"><span>Font size</span><input type="range" class="sf-font" min="14" max="60" value="28"></label>' +
+      '<label class="sf-row sf-toggle-row"><span>Hide Netflix subtitle</span><input type="checkbox" class="sf-hide" checked></label>' +
+      '<label class="sf-row sf-toggle-row"><span>Show subtitles</span><input type="checkbox" class="sf-enabled" checked></label>' +
+      '</div>';
+
+    launcher = document.createElement('button');
+    launcher.className = 'sf-launcher';
+    launcher.type = 'button';
+    launcher.textContent = 'DS';
+
+    document.body.appendChild(panel);
+    document.body.appendChild(launcher);
+
+    sel1 = panel.querySelector('.sf-sel1');
+    sel2 = panel.querySelector('.sf-sel2');
+
+    sel1.addEventListener('change', function (e) { selectTrack(0, e.target.value); });
+    sel2.addEventListener('change', function (e) { selectTrack(1, e.target.value); });
+    panel.querySelector('.sf-font').addEventListener('input', function (e) {
+      state.fontSize = parseInt(e.target.value, 10) || 28;
+    });
+    panel.querySelector('.sf-hide').addEventListener('change', function (e) {
+      state.hideNetflix = e.target.checked;
+    });
+    panel.querySelector('.sf-enabled').addEventListener('change', function (e) {
+      state.enabled = e.target.checked;
+    });
+    panel.querySelector('.sf-close').addEventListener('click', function () {
+      state.collapsed = true;
+    });
+    launcher.addEventListener('click', function () {
+      state.collapsed = false;
+    });
+
+    return true;
+  }
+
+  function refreshDropdowns() {
+    state.tracksDirty = false;
+    [sel1, sel2].forEach(function (sel, slot) {
+      sel.innerHTML = '';
+      const off = document.createElement('option');
+      off.value = '';
+      off.textContent = 'Off';
+      sel.appendChild(off);
+      state.tracks.forEach(function (tr) {
+        const o = document.createElement('option');
+        o.value = tr.id;
+        o.textContent = tr.label;
+        sel.appendChild(o);
+      });
+      const lang = state.selectedLang[slot];
+      if (lang) {
+        const match = state.tracks.find(function (t) { return t.bcp47 === lang; });
+        if (match) sel.value = match.id;
+      }
+    });
+  }
 
   function render() {
+    if (!ensureUI()) return;
+    if (state.tracksDirty) refreshDropdowns();
+
+    const onWatch = /\/watch\//.test(location.href);
+    const showUI = onWatch && state.tracks.length > 0;
+    if (!showUI) {
+      panel.style.display = 'none';
+      launcher.style.display = 'none';
+    } else {
+      panel.style.display = state.collapsed ? 'none' : 'block';
+      launcher.style.display = state.collapsed ? 'block' : 'none';
+    }
+
+    const anyActive = state.enabled && (state.cues[0].length > 0 || state.cues[1].length > 0);
+    hideStyle.textContent = (onWatch && state.hideNetflix && anyActive)
+      ? '.player-timedtext, .image-based-subtitles { display: none !important; }'
+      : '';
+
     const video = document.querySelector('video');
-    if (!video || !state.enabled) {
+    if (!onWatch || !video || !state.enabled) {
       overlay.style.display = 'none';
       return;
     }
@@ -163,9 +277,10 @@
     overlay.style.top = rect.top + 'px';
     overlay.style.width = rect.width + 'px';
     overlay.style.height = rect.height + 'px';
+
     const time = video.currentTime;
-    const text1 = findCue(state.tracks[0], time - state.offsets[0]);
-    const text2 = findCue(state.tracks[1], time - state.offsets[1]);
+    const text1 = findCue(state.cues[0], time);
+    const text2 = findCue(state.cues[1], time);
     line1.textContent = text1;
     line2.textContent = text2;
     line1.style.display = text1 ? 'block' : 'none';
