@@ -200,6 +200,9 @@
     card.className = 'sf-fc-card';
     if (fcFlipped) card.classList.add('sf-fc-flipped');
 
+    const cardInner = document.createElement('div');
+    cardInner.className = 'sf-fc-card-inner';
+
     const front = document.createElement('div');
     front.className = 'sf-fc-front';
     front.textContent = entry.word;
@@ -208,8 +211,9 @@
     back.className = 'sf-fc-back';
     back.textContent = entry.translation || '(no translation)';
 
-    card.appendChild(front);
-    card.appendChild(back);
+    cardInner.appendChild(front);
+    cardInner.appendChild(back);
+    card.appendChild(cardInner);
 
     card.addEventListener('click', function () {
       fcFlipped = !fcFlipped;
@@ -273,13 +277,47 @@
       renderFlashCard();
     });
 
+    const actions = document.createElement('div');
+    actions.className = 'sf-fc-actions';
+
+    const exportBtn = document.createElement('button');
+    exportBtn.type = 'button';
+    exportBtn.className = 'sf-fc-export';
+    exportBtn.textContent = 'Export to Anki';
+    exportBtn.addEventListener('click', function () {
+      SF.exportAnki();
+    });
+
+    actions.appendChild(deleteBtn);
+    actions.appendChild(exportBtn);
+
     container.appendChild(header);
     container.appendChild(card);
     container.appendChild(nav);
-    container.appendChild(deleteBtn);
+    container.appendChild(actions);
     fcOverlay.appendChild(container);
 
     const target = document.fullscreenElement || document.body;
     if (fcOverlay.parentElement !== target) target.appendChild(fcOverlay);
   }
+
+  SF.exportAnki = function () {
+    if (!SF.savedWords.length) return;
+    var lines = SF.savedWords.map(function (entry) {
+      var w = entry.word.replace(/	/g, ' ');
+      var t = (entry.translation || '').replace(/	/g, ' ');
+      return w + '\t' + t;
+    });
+    var content = lines.join('\n');
+    var blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'subfreeze-anki-' + new Date().toISOString().slice(0, 10) + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    SF.showToast('Exported ' + SF.savedWords.length + ' cards', '');
+  };
 })();

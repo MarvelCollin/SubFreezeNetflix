@@ -3,22 +3,34 @@
   const state = SF.state;
 
   const TEMPLATE =
-    '<div class="sf-head"><span>Dual Subtitles</span><button class="sf-close" type="button">&times;</button></div>' +
+    '<div class="sf-head"><div class="sf-head-left"><svg class="sf-logo" viewBox="0 0 24 24" width="18" height="18"><path fill="#e50914" d="M4 2v20l5-4 5 4 5-4 5 4V2H4z"/><rect x="8" y="7" width="8" height="2" rx="1" fill="#fff"/><rect x="8" y="11" width="6" height="2" rx="1" fill="#fff" opacity="0.7"/></svg><span>SubFreeze</span></div><button class="sf-close" type="button">&times;</button></div>' +
     '<div class="sf-body">' +
-    '<label class="sf-row"><span>Subtitle 1</span><select class="sf-sel1"></select></label>' +
-    '<label class="sf-row"><span>Size 1</span><input type="range" class="sf-size1" min="2" max="9" step="0.25" value="4"></label>' +
-    '<label class="sf-row"><span>Subtitle 2</span><select class="sf-sel2"></select></label>' +
-    '<label class="sf-row"><span>Size 2</span><input type="range" class="sf-size2" min="2" max="9" step="0.25" value="3.4"></label>' +
-    '<label class="sf-row"><span>Skip seconds ( , and . )</span><input type="number" class="sf-skip" min="0.5" max="300" step="0.5" value="10"></label>' +
-    '<div class="sf-skip-row"><button class="sf-back" type="button">&laquo; Back</button><button class="sf-fwd" type="button">Next &raquo;</button></div>' +
-    '<label class="sf-row sf-toggle-row"><span>Scroll = prev/next subtitle</span><input type="checkbox" class="sf-scroll" checked></label>' +
-    '<label class="sf-row sf-toggle-row"><span>Show previous subtitle (left)</span><input type="checkbox" class="sf-prev-toggle"></label>' +
-    '<label class="sf-row"><span>Previous size</span><input type="range" class="sf-prevsize" min="2" max="9" step="0.25" value="2"></label>' +
-    '<label class="sf-row sf-toggle-row"><span>Hide Netflix subtitle</span><input type="checkbox" class="sf-hide" checked></label>' +
-    '<label class="sf-row sf-toggle-row"><span>Show subtitles</span><input type="checkbox" class="sf-enabled" checked></label>' +
-    '<label class="sf-row"><span>Translate saved words to</span><select class="sf-lang"></select></label>' +
-    '<div class="sf-row sf-words-head"><span>Saved words</span><button class="sf-flashcard-btn" type="button">Flash Cards</button><button class="sf-clear" type="button">Clear</button></div>' +
+    '<div class="sf-section">' +
+    '<div class="sf-section-title">Subtitles</div>' +
+    '<label class="sf-row"><span>Primary</span><select class="sf-sel1"></select></label>' +
+    '<label class="sf-row sf-range-row"><span>Size</span><input type="range" class="sf-size1" min="2" max="9" step="0.25" value="4"><span class="sf-range-val"></span></label>' +
+    '<label class="sf-row"><span>Secondary</span><select class="sf-sel2"></select></label>' +
+    '<label class="sf-row sf-range-row"><span>Size</span><input type="range" class="sf-size2" min="2" max="9" step="0.25" value="3.4"><span class="sf-range-val"></span></label>' +
+    '</div>' +
+    '<div class="sf-section">' +
+    '<div class="sf-section-title">Playback</div>' +
+    '<label class="sf-row sf-range-row"><span>Skip (sec)</span><input type="number" class="sf-skip" min="0.5" max="300" step="0.5" value="10"></label>' +
+    '<div class="sf-skip-row"><button class="sf-back" type="button">&#9664; Back</button><button class="sf-fwd" type="button">Next &#9654;</button></div>' +
+    '</div>' +
+    '<div class="sf-section">' +
+    '<div class="sf-section-title">Display</div>' +
+    '<label class="sf-row sf-toggle-row"><span>Scroll seek</span><label class="sf-switch"><input type="checkbox" class="sf-scroll" checked><span class="sf-slider"></span></label></label>' +
+    '<label class="sf-row sf-toggle-row"><span>Previous subtitle</span><label class="sf-switch"><input type="checkbox" class="sf-prev-toggle"><span class="sf-slider"></span></label></label>' +
+    '<label class="sf-row sf-range-row"><span>Previous size</span><input type="range" class="sf-prevsize" min="2" max="9" step="0.25" value="2"><span class="sf-range-val"></span></label>' +
+    '<label class="sf-row sf-toggle-row"><span>Hide Netflix subs</span><label class="sf-switch"><input type="checkbox" class="sf-hide" checked><span class="sf-slider"></span></label></label>' +
+    '<label class="sf-row sf-toggle-row"><span>Show subtitles</span><label class="sf-switch"><input type="checkbox" class="sf-enabled" checked><span class="sf-slider"></span></label></label>' +
+    '</div>' +
+    '<div class="sf-section">' +
+    '<div class="sf-section-title">Dictionary</div>' +
+    '<label class="sf-row"><span>Translate to</span><select class="sf-lang"></select></label>' +
+    '<div class="sf-words-actions"><button class="sf-flashcard-btn" type="button">&#9733; Flash Cards</button><button class="sf-export-btn" type="button">&#8595; Anki</button><button class="sf-clear" type="button">&#10005; Clear</button></div>' +
     '<div class="sf-words"></div>' +
+    '</div>' +
     '</div>';
 
   SF.createPanel = function () {
@@ -106,6 +118,9 @@
     });
     ui.panel.querySelector('.sf-flashcard-btn').addEventListener('click', function () {
       SF.openFlashCards();
+    });
+    ui.panel.querySelector('.sf-export-btn').addEventListener('click', function () {
+      SF.exportAnki();
     });
     ui.panel.querySelector('.sf-close').addEventListener('click', function () {
       state.collapsed = true;
