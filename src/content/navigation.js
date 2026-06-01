@@ -8,12 +8,45 @@
     return null;
   }
 
+  const SKIP_SELECTOR = '.sf-panel, [role="menu"], [role="dialog"], [role="listbox"]';
+
+  function inMenu(el) {
+    if (!el || !el.closest) return false;
+    if (el.closest(SKIP_SELECTOR)) return true;
+    let node = el;
+    while (node && node.nodeType === 1 && node !== document.body) {
+      const oy = getComputedStyle(node).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && node.scrollHeight > node.clientHeight + 2) return true;
+      node = node.parentElement;
+    }
+    return false;
+  }
+
+  let navTime = null;
+  let navAt = 0;
+
+  function refTime(video) {
+    if (navTime !== null) {
+      if (Date.now() - navAt > 1500 || Math.abs(video.currentTime - navTime) < 0.3) {
+        navTime = null;
+        return video.currentTime;
+      }
+      return navTime;
+    }
+    return video.currentTime;
+  }
+
+  function applySeek(target) {
+    navTime = target;
+    navAt = Date.now();
+    SF.seekTo(target);
+    SF.showAtTime(target);
+  }
+
   SF.jump = function (delta) {
     const video = document.querySelector('video');
     if (!video) return;
-    const target = Math.max(0, video.currentTime + delta);
-    SF.seekTo(target);
-    SF.showAtTime(target);
+    applySeek(Math.max(0, refTime(video) + delta));
   };
 
   function seekSubtitle(dir) {
@@ -21,7 +54,7 @@
     if (!cues) return;
     const video = document.querySelector('video');
     if (!video) return;
-    const t = video.currentTime;
+    const t = refTime(video);
     let target = null;
     if (dir > 0) {
       const next = cues.find(function (c) { return c.start > t + 0.05; });
@@ -35,8 +68,7 @@
       if (prev) target = prev.start;
     }
     if (target === null) return;
-    SF.seekTo(target);
-    SF.showAtTime(target);
+    applySeek(target);
   }
 
   SF.initNavigation = function () {
@@ -51,6 +83,7 @@
     window.addEventListener('wheel', function (e) {
       if (!state.scrollSeek) return;
       if (!/\/watch\//.test(location.href)) return;
+      if (inMenu(e.target)) return;
       if (!activeCues()) return;
       const video = document.querySelector('video');
       if (!video) return;

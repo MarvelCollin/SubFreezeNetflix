@@ -13,8 +13,7 @@
     '<div class="sf-skip-row"><button class="sf-back" type="button">&laquo; Back</button><button class="sf-fwd" type="button">Next &raquo;</button></div>' +
     '<label class="sf-row sf-toggle-row"><span>Scroll = prev/next subtitle</span><input type="checkbox" class="sf-scroll" checked></label>' +
     '<label class="sf-row sf-toggle-row"><span>Show previous subtitle (left)</span><input type="checkbox" class="sf-prev-toggle"></label>' +
-    '<label class="sf-row sf-toggle-row"><span>Previous follows center size</span><input type="checkbox" class="sf-prevfollow" checked></label>' +
-    '<label class="sf-row"><span>Previous size (custom)</span><input type="range" class="sf-prevsize" min="2" max="9" step="0.25" value="3"></label>' +
+    '<label class="sf-row"><span>Previous size</span><input type="range" class="sf-prevsize" min="2" max="9" step="0.25" value="2"></label>' +
     '<label class="sf-row sf-toggle-row"><span>Hide Netflix subtitle</span><input type="checkbox" class="sf-hide" checked></label>' +
     '<label class="sf-row sf-toggle-row"><span>Show subtitles</span><input type="checkbox" class="sf-enabled" checked></label>' +
     '</div>';
@@ -34,7 +33,6 @@
     const skipEl = ui.panel.querySelector('.sf-skip');
     const scrollEl = ui.panel.querySelector('.sf-scroll');
     const prevEl = ui.panel.querySelector('.sf-prev-toggle');
-    const prevFollowEl = ui.panel.querySelector('.sf-prevfollow');
     const prevSizeEl = ui.panel.querySelector('.sf-prevsize');
     const hideEl = ui.panel.querySelector('.sf-hide');
     const enabledEl = ui.panel.querySelector('.sf-enabled');
@@ -44,7 +42,6 @@
     skipEl.value = state.skip;
     scrollEl.checked = state.scrollSeek;
     prevEl.checked = state.showPrev;
-    prevFollowEl.checked = state.prevFollow;
     prevSizeEl.value = state.prevScale;
     hideEl.checked = state.hideNetflix;
     enabledEl.checked = state.enabled;
@@ -71,6 +68,10 @@
     });
     prevEl.addEventListener('change', function (e) {
       state.showPrev = e.target.checked;
+      SF.saveSettings();
+    });
+    prevSizeEl.addEventListener('input', function (e) {
+      state.prevScale = parseFloat(e.target.value) || 3;
       SF.saveSettings();
     });
     hideEl.addEventListener('change', function (e) {
