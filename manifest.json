@@ -8,24 +8,33 @@
     "default_title": "Toggle Dual Subtitles"
   },
   "background": {
-    "service_worker": "background.js",
-    "scripts": ["background.js"]
+    "service_worker": "src/background/service-worker.js",
+    "scripts": ["src/background/service-worker.js"]
   },
   "content_scripts": [
     {
       "matches": ["https://www.netflix.com/*"],
-      "js": ["content.js"],
+      "js": [
+        "src/content/core.js",
+        "src/content/parser.js",
+        "src/content/subtitles.js",
+        "src/content/navigation.js",
+        "src/content/overlay.js",
+        "src/content/panel.js",
+        "src/content/netflix-menu.js",
+        "src/content/main.js"
+      ],
       "run_at": "document_start",
       "world": "MAIN"
     },
     {
       "matches": ["https://www.netflix.com/*"],
-      "js": ["bridge.js"],
+      "js": ["src/content/bridge.js"],
       "run_at": "document_start"
     },
     {
       "matches": ["https://www.netflix.com/*"],
-      "css": ["styles.css"],
+      "css": ["src/styles/overlay.css"],
       "run_at": "document_start"
     }
   ],

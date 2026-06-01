@@ -1,0 +1,107 @@
+(function () {
+  const SF = window.__SubFreeze;
+  const state = SF.state;
+
+  const TEMPLATE =
+    '<div class="sf-head"><span>Dual Subtitles</span><button class="sf-close" type="button">&times;</button></div>' +
+    '<div class="sf-body">' +
+    '<label class="sf-row"><span>Subtitle 1</span><select class="sf-sel1"></select></label>' +
+    '<label class="sf-row"><span>Size 1</span><input type="range" class="sf-size1" min="2" max="9" step="0.25" value="4"></label>' +
+    '<label class="sf-row"><span>Subtitle 2</span><select class="sf-sel2"></select></label>' +
+    '<label class="sf-row"><span>Size 2</span><input type="range" class="sf-size2" min="2" max="9" step="0.25" value="3.4"></label>' +
+    '<label class="sf-row"><span>Skip seconds ( , and . )</span><input type="number" class="sf-skip" min="0.5" max="300" step="0.5" value="10"></label>' +
+    '<div class="sf-skip-row"><button class="sf-back" type="button">&laquo; Back</button><button class="sf-fwd" type="button">Next &raquo;</button></div>' +
+    '<label class="sf-row sf-toggle-row"><span>Scroll = prev/next subtitle</span><input type="checkbox" class="sf-scroll" checked></label>' +
+    '<label class="sf-row sf-toggle-row"><span>Hide Netflix subtitle</span><input type="checkbox" class="sf-hide" checked></label>' +
+    '<label class="sf-row sf-toggle-row"><span>Show subtitles</span><input type="checkbox" class="sf-enabled" checked></label>' +
+    '</div>';
+
+  SF.createPanel = function () {
+    const ui = SF.ui;
+
+    ui.panel = document.createElement('div');
+    ui.panel.className = 'sf-panel';
+    ui.panel.innerHTML = TEMPLATE;
+    document.body.appendChild(ui.panel);
+
+    ui.sel1 = ui.panel.querySelector('.sf-sel1');
+    ui.sel2 = ui.panel.querySelector('.sf-sel2');
+    const size1El = ui.panel.querySelector('.sf-size1');
+    const size2El = ui.panel.querySelector('.sf-size2');
+    const skipEl = ui.panel.querySelector('.sf-skip');
+    const scrollEl = ui.panel.querySelector('.sf-scroll');
+    const hideEl = ui.panel.querySelector('.sf-hide');
+    const enabledEl = ui.panel.querySelector('.sf-enabled');
+
+    size1El.value = state.scale[0];
+    size2El.value = state.scale[1];
+    skipEl.value = state.skip;
+    scrollEl.checked = state.scrollSeek;
+    hideEl.checked = state.hideNetflix;
+    enabledEl.checked = state.enabled;
+
+    ui.sel1.addEventListener('change', function (e) { SF.selectTrack(0, e.target.value); });
+    ui.sel2.addEventListener('change', function (e) { SF.selectTrack(1, e.target.value); });
+    size1El.addEventListener('input', function (e) {
+      state.scale[0] = parseFloat(e.target.value) || 4;
+      SF.saveSettings();
+    });
+    size2El.addEventListener('input', function (e) {
+      state.scale[1] = parseFloat(e.target.value) || 4;
+      SF.saveSettings();
+    });
+    skipEl.addEventListener('input', function (e) {
+      state.skip = parseFloat(e.target.value) || 10;
+      SF.saveSettings();
+    });
+    ui.panel.querySelector('.sf-back').addEventListener('click', function () { SF.jump(-state.skip); });
+    ui.panel.querySelector('.sf-fwd').addEventListener('click', function () { SF.jump(state.skip); });
+    scrollEl.addEventListener('change', function (e) {
+      state.scrollSeek = e.target.checked;
+      SF.saveSettings();
+    });
+    hideEl.addEventListener('change', function (e) {
+      state.hideNetflix = e.target.checked;
+      SF.saveSettings();
+    });
+    enabledEl.addEventListener('change', function (e) {
+      state.enabled = e.target.checked;
+      SF.saveSettings();
+    });
+    ui.panel.querySelector('.sf-close').addEventListener('click', function () {
+      state.collapsed = true;
+    });
+  };
+
+  SF.syncControls = function () {
+    if (!SF.ui.panel) return;
+    SF.ui.panel.querySelector('.sf-size1').value = state.scale[0];
+    SF.ui.panel.querySelector('.sf-size2').value = state.scale[1];
+  };
+
+  SF.refreshDropdowns = function () {
+    state.tracksDirty = false;
+    [SF.ui.sel1, SF.ui.sel2].forEach(function (sel, slot) {
+      sel.innerHTML = '';
+      const off = document.createElement('option');
+      off.value = '';
+      off.textContent = 'Off';
+      sel.appendChild(off);
+      state.tracks.forEach(function (tr) {
+        const o = document.createElement('option');
+        o.value = tr.id;
+        o.textContent = tr.label;
+        sel.appendChild(o);
+      });
+      const lang = state.selectedLang[slot];
+      if (lang) {
+        const match = state.tracks.find(function (t) { return t.bcp47 === lang; });
+        if (match) sel.value = match.id;
+      }
+    });
+  };
+
+  SF.updatePanelVisibility = function (show) {
+    if (SF.ui.panel) SF.ui.panel.style.display = show ? 'block' : 'none';
+  };
+})();
