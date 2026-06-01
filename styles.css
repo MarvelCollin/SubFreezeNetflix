@@ -86,6 +86,39 @@
   font-size: 12px;
 }
 
+.sf-row input[type="number"] {
+  background: #2b2b2b;
+  color: #ffffff;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 12px;
+  width: 70px;
+}
+
+.sf-skip-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sf-skip-row button {
+  flex: 1;
+  background: #333333;
+  color: #ffffff;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 7px 0;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.sf-skip-row button:hover {
+  background: #e50914;
+  border-color: #e50914;
+}
+
 .sf-toggle-row {
   flex-direction: row;
   justify-content: space-between;

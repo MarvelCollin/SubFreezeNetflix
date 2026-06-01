@@ -10,6 +10,7 @@
     cache: {},
     tracksDirty: false,
     scale: [4, 3.4],
+    skip: 10,
     enabled: true,
     hideNetflix: true,
     collapsed: true
@@ -22,6 +23,22 @@
       state.collapsed = !state.collapsed;
     }
   });
+
+  function jump(delta) {
+    const video = document.querySelector('video');
+    if (!video) return;
+    video.currentTime = Math.max(0, video.currentTime + delta);
+  }
+
+  window.addEventListener('keydown', function (e) {
+    const tag = e.target && e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (e.key === ',') {
+      jump(-state.skip);
+    } else if (e.key === '.') {
+      jump(state.skip);
+    }
+  }, true);
 
   function ttmlTime(value) {
     if (!value) return 0;
@@ -192,6 +209,8 @@
       '<label class="sf-row"><span>Size 1</span><input type="range" class="sf-size1" min="2" max="9" step="0.25" value="4"></label>' +
       '<label class="sf-row"><span>Subtitle 2</span><select class="sf-sel2"></select></label>' +
       '<label class="sf-row"><span>Size 2</span><input type="range" class="sf-size2" min="2" max="9" step="0.25" value="3.4"></label>' +
+      '<label class="sf-row"><span>Skip seconds ( , and . )</span><input type="number" class="sf-skip" min="0.5" max="300" step="0.5" value="10"></label>' +
+      '<div class="sf-skip-row"><button class="sf-back" type="button">&laquo; Back</button><button class="sf-fwd" type="button">Next &raquo;</button></div>' +
       '<label class="sf-row sf-toggle-row"><span>Hide Netflix subtitle</span><input type="checkbox" class="sf-hide" checked></label>' +
       '<label class="sf-row sf-toggle-row"><span>Show subtitles</span><input type="checkbox" class="sf-enabled" checked></label>' +
       '</div>';
@@ -208,6 +227,15 @@
     });
     panel.querySelector('.sf-size2').addEventListener('input', function (e) {
       state.scale[1] = parseFloat(e.target.value) || 4;
+    });
+    panel.querySelector('.sf-skip').addEventListener('input', function (e) {
+      state.skip = parseFloat(e.target.value) || 10;
+    });
+    panel.querySelector('.sf-back').addEventListener('click', function () {
+      jump(-state.skip);
+    });
+    panel.querySelector('.sf-fwd').addEventListener('click', function () {
+      jump(state.skip);
     });
     panel.querySelector('.sf-hide').addEventListener('change', function (e) {
       state.hideNetflix = e.target.checked;
