@@ -9,11 +9,19 @@
     cues: [[], []],
     cache: {},
     tracksDirty: false,
-    fontSize: 28,
+    scale: [4, 3.4],
     enabled: true,
     hideNetflix: true,
-    collapsed: false
+    collapsed: true
   };
+
+  window.addEventListener('message', function (e) {
+    if (e.source !== window) return;
+    const d = e.data;
+    if (d && d.__subfreeze && d.action === 'toggle') {
+      state.collapsed = !state.collapsed;
+    }
+  });
 
   function ttmlTime(value) {
     if (!value) return 0;
@@ -157,7 +165,7 @@
     return result;
   };
 
-  let overlay, line1, line2, panel, launcher, hideStyle, sel1, sel2;
+  let overlay, line1, line2, panel, hideStyle, sel1, sel2;
 
   function ensureUI() {
     if (overlay) return true;
@@ -180,28 +188,26 @@
     panel.innerHTML =
       '<div class="sf-head"><span>Dual Subtitles</span><button class="sf-close" type="button">&times;</button></div>' +
       '<div class="sf-body">' +
-      '<label class="sf-row"><span>Subtitle 1 (white)</span><select class="sf-sel1"></select></label>' +
-      '<label class="sf-row"><span>Subtitle 2 (yellow)</span><select class="sf-sel2"></select></label>' +
-      '<label class="sf-row"><span>Font size</span><input type="range" class="sf-font" min="14" max="60" value="28"></label>' +
+      '<label class="sf-row"><span>Subtitle 1</span><select class="sf-sel1"></select></label>' +
+      '<label class="sf-row"><span>Size 1</span><input type="range" class="sf-size1" min="2" max="9" step="0.25" value="4"></label>' +
+      '<label class="sf-row"><span>Subtitle 2</span><select class="sf-sel2"></select></label>' +
+      '<label class="sf-row"><span>Size 2</span><input type="range" class="sf-size2" min="2" max="9" step="0.25" value="3.4"></label>' +
       '<label class="sf-row sf-toggle-row"><span>Hide Netflix subtitle</span><input type="checkbox" class="sf-hide" checked></label>' +
       '<label class="sf-row sf-toggle-row"><span>Show subtitles</span><input type="checkbox" class="sf-enabled" checked></label>' +
       '</div>';
 
-    launcher = document.createElement('button');
-    launcher.className = 'sf-launcher';
-    launcher.type = 'button';
-    launcher.textContent = 'DS';
-
     document.body.appendChild(panel);
-    document.body.appendChild(launcher);
 
     sel1 = panel.querySelector('.sf-sel1');
     sel2 = panel.querySelector('.sf-sel2');
 
     sel1.addEventListener('change', function (e) { selectTrack(0, e.target.value); });
     sel2.addEventListener('change', function (e) { selectTrack(1, e.target.value); });
-    panel.querySelector('.sf-font').addEventListener('input', function (e) {
-      state.fontSize = parseInt(e.target.value, 10) || 28;
+    panel.querySelector('.sf-size1').addEventListener('input', function (e) {
+      state.scale[0] = parseFloat(e.target.value) || 4;
+    });
+    panel.querySelector('.sf-size2').addEventListener('input', function (e) {
+      state.scale[1] = parseFloat(e.target.value) || 4;
     });
     panel.querySelector('.sf-hide').addEventListener('change', function (e) {
       state.hideNetflix = e.target.checked;
@@ -211,9 +217,6 @@
     });
     panel.querySelector('.sf-close').addEventListener('click', function () {
       state.collapsed = true;
-    });
-    launcher.addEventListener('click', function () {
-      state.collapsed = false;
     });
 
     return true;
@@ -246,14 +249,8 @@
     if (state.tracksDirty) refreshDropdowns();
 
     const onWatch = /\/watch\//.test(location.href);
-    const showUI = onWatch && state.tracks.length > 0;
-    if (!showUI) {
-      panel.style.display = 'none';
-      launcher.style.display = 'none';
-    } else {
-      panel.style.display = state.collapsed ? 'none' : 'block';
-      launcher.style.display = state.collapsed ? 'block' : 'none';
-    }
+    const showUI = onWatch && state.tracks.length > 0 && !state.collapsed;
+    panel.style.display = showUI ? 'block' : 'none';
 
     const anyActive = state.enabled && (state.cues[0].length > 0 || state.cues[1].length > 0);
     hideStyle.textContent = (onWatch && state.hideNetflix && anyActive)
@@ -285,8 +282,8 @@
     line2.textContent = text2;
     line1.style.display = text1 ? 'block' : 'none';
     line2.style.display = text2 ? 'block' : 'none';
-    line1.style.fontSize = state.fontSize + 'px';
-    line2.style.fontSize = state.fontSize + 'px';
+    line1.style.fontSize = Math.round(rect.height * state.scale[0] / 100) + 'px';
+    line2.style.fontSize = Math.round(rect.height * state.scale[1] / 100) + 'px';
   }
 
   setInterval(render, 150);
