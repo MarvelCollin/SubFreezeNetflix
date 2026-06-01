@@ -24,6 +24,9 @@
     scale: [4, 3.4],
     skip: 10,
     scrollSeek: true,
+    showPrev: false,
+    prevFollow: true,
+    prevScale: 3,
     enabled: true,
     hideNetflix: true,
     collapsed: true
@@ -56,6 +59,9 @@
       if (typeof s.scale1 === 'number') state.scale[1] = s.scale1;
       if (typeof s.skip === 'number') state.skip = s.skip;
       if (typeof s.scrollSeek === 'boolean') state.scrollSeek = s.scrollSeek;
+      if (typeof s.showPrev === 'boolean') state.showPrev = s.showPrev;
+      if (typeof s.prevFollow === 'boolean') state.prevFollow = s.prevFollow;
+      if (typeof s.prevScale === 'number') state.prevScale = s.prevScale;
       if (typeof s.hideNetflix === 'boolean') state.hideNetflix = s.hideNetflix;
       if (typeof s.enabled === 'boolean') state.enabled = s.enabled;
     } catch (err) {}
@@ -71,6 +77,9 @@
         scale1: state.scale[1],
         skip: state.skip,
         scrollSeek: state.scrollSeek,
+        showPrev: state.showPrev,
+        prevFollow: state.prevFollow,
+        prevScale: state.prevScale,
         hideNetflix: state.hideNetflix,
         enabled: state.enabled
       }));

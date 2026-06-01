@@ -11,7 +11,9 @@
   SF.jump = function (delta) {
     const video = document.querySelector('video');
     if (!video) return;
-    SF.seekTo(video.currentTime + delta);
+    const target = Math.max(0, video.currentTime + delta);
+    SF.seekTo(target);
+    SF.showAtTime(target);
   };
 
   function seekSubtitle(dir) {
@@ -20,17 +22,21 @@
     const video = document.querySelector('video');
     if (!video) return;
     const t = video.currentTime;
+    let target = null;
     if (dir > 0) {
       const next = cues.find(function (c) { return c.start > t + 0.05; });
-      if (next) SF.seekTo(next.start);
+      if (next) target = next.start;
     } else {
       let prev = null;
       for (let i = 0; i < cues.length; i++) {
         if (cues[i].start < t - 0.4) prev = cues[i];
         else break;
       }
-      if (prev) SF.seekTo(prev.start);
+      if (prev) target = prev.start;
     }
+    if (target === null) return;
+    SF.seekTo(target);
+    SF.showAtTime(target);
   }
 
   SF.initNavigation = function () {

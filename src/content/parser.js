@@ -59,4 +59,12 @@
     }
     return '';
   };
+
+  SF.findPrevCue = function (cues, time) {
+    let prev = '';
+    for (let i = 0; i < cues.length; i++) {
+      if (cues[i].end < time) prev = cues[i].text;
+    }
+    return prev;
+  };
 })();
