@@ -38,6 +38,7 @@
   }
 
   SF.loadSettings();
+  SF.loadWords();
   SF.installManifestHook();
   SF.initNavigation();
 

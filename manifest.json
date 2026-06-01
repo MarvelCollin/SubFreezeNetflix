@@ -3,7 +3,10 @@
   "name": "SubFreeze Netflix Dual Subtitles",
   "version": "2.0.0",
   "description": "Show two Netflix subtitle languages at the same time. Just pick two languages.",
-  "host_permissions": ["https://www.netflix.com/*"],
+  "host_permissions": [
+    "https://www.netflix.com/*",
+    "https://translate.googleapis.com/*"
+  ],
   "action": {
     "default_title": "Toggle Dual Subtitles"
   },
@@ -23,6 +26,7 @@
         "src/content/overlay.js",
         "src/content/panel.js",
         "src/content/netflix-menu.js",
+        "src/content/vocab.js",
         "src/content/main.js"
       ],
       "run_at": "document_start",

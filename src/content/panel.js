@@ -16,6 +16,9 @@
     '<label class="sf-row"><span>Previous size</span><input type="range" class="sf-prevsize" min="2" max="9" step="0.25" value="2"></label>' +
     '<label class="sf-row sf-toggle-row"><span>Hide Netflix subtitle</span><input type="checkbox" class="sf-hide" checked></label>' +
     '<label class="sf-row sf-toggle-row"><span>Show subtitles</span><input type="checkbox" class="sf-enabled" checked></label>' +
+    '<label class="sf-row"><span>Translate saved words to</span><select class="sf-lang"></select></label>' +
+    '<div class="sf-row sf-words-head"><span>Saved words</span><button class="sf-flashcard-btn" type="button">Flash Cards</button><button class="sf-clear" type="button">Clear</button></div>' +
+    '<div class="sf-words"></div>' +
     '</div>';
 
   SF.createPanel = function () {
@@ -36,6 +39,16 @@
     const prevSizeEl = ui.panel.querySelector('.sf-prevsize');
     const hideEl = ui.panel.querySelector('.sf-hide');
     const enabledEl = ui.panel.querySelector('.sf-enabled');
+    const langEl = ui.panel.querySelector('.sf-lang');
+    ui.wordList = ui.panel.querySelector('.sf-words');
+
+    SF.LANGS.forEach(function (l) {
+      const o = document.createElement('option');
+      o.value = l.code;
+      o.textContent = l.name;
+      langEl.appendChild(o);
+    });
+    langEl.value = state.targetLang;
 
     size1El.value = state.scale[0];
     size2El.value = state.scale[1];
@@ -82,9 +95,23 @@
       state.enabled = e.target.checked;
       SF.saveSettings();
     });
+    langEl.addEventListener('change', function (e) {
+      state.targetLang = e.target.value;
+      SF.saveSettings();
+    });
+    ui.panel.querySelector('.sf-clear').addEventListener('click', function () {
+      SF.savedWords = [];
+      SF.saveWords();
+      SF.renderWordList();
+    });
+    ui.panel.querySelector('.sf-flashcard-btn').addEventListener('click', function () {
+      SF.openFlashCards();
+    });
     ui.panel.querySelector('.sf-close').addEventListener('click', function () {
       state.collapsed = true;
     });
+
+    SF.renderWordList();
   };
 
   SF.syncControls = function () {

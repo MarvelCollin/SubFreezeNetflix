@@ -25,7 +25,7 @@
   let navTime = null;
   let navAt = 0;
 
-  function refTime(video) {
+  SF.effectiveTime = function (video) {
     if (navTime !== null) {
       if (Date.now() - navAt > 1500 || Math.abs(video.currentTime - navTime) < 0.3) {
         navTime = null;
@@ -34,7 +34,7 @@
       return navTime;
     }
     return video.currentTime;
-  }
+  };
 
   function applySeek(target) {
     navTime = target;
@@ -46,7 +46,7 @@
   SF.jump = function (delta) {
     const video = document.querySelector('video');
     if (!video) return;
-    applySeek(Math.max(0, refTime(video) + delta));
+    applySeek(Math.max(0, SF.effectiveTime(video) + delta));
   };
 
   function seekSubtitle(dir) {
@@ -54,7 +54,7 @@
     if (!cues) return;
     const video = document.querySelector('video');
     if (!video) return;
-    const t = refTime(video);
+    const t = SF.effectiveTime(video);
     let target = null;
     if (dir > 0) {
       const next = cues.find(function (c) { return c.start > t + 0.05; });
@@ -79,10 +79,12 @@
       else if (e.key === '.') SF.jump(state.skip);
     }, true);
 
-    let lastWheel = 0;
+    let lastEvent = 0;
+    let lastFire = 0;
     window.addEventListener('wheel', function (e) {
       if (!state.scrollSeek) return;
       if (!/\/watch\//.test(location.href)) return;
+      if (!e.deltaY) return;
       if (inMenu(e.target)) return;
       if (!activeCues()) return;
       const video = document.querySelector('video');
@@ -92,11 +94,10 @@
         e.clientY < rect.top || e.clientY > rect.bottom) return;
       e.preventDefault();
       const now = Date.now();
-      if (now - lastWheel < SF.config.wheelCooldown) {
-        lastWheel = now;
-        return;
-      }
-      lastWheel = now;
+      const newGesture = (now - lastEvent) > SF.config.scrollGap;
+      lastEvent = now;
+      if (!newGesture && (now - lastFire) < SF.config.scrollHold) return;
+      lastFire = now;
       seekSubtitle(e.deltaY > 0 ? 1 : -1);
     }, { passive: false });
   };

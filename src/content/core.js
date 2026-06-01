@@ -9,7 +9,8 @@
     menuClass: 'subfreeze-secondary-menu',
     subMenuSelector: 'div[data-uia="selector-audio-subtitle"]',
     renderInterval: 150,
-    wheelCooldown: 220,
+    scrollGap: 200,
+    scrollHold: 500,
     minScale: 2,
     maxScale: 9
   };
@@ -26,6 +27,7 @@
     scrollSeek: true,
     showPrev: false,
     prevScale: 2,
+    targetLang: 'id',
     enabled: true,
     hideNetflix: true,
     collapsed: true
@@ -60,6 +62,7 @@
       if (typeof s.scrollSeek === 'boolean') state.scrollSeek = s.scrollSeek;
       if (typeof s.showPrev === 'boolean') state.showPrev = s.showPrev;
       if (typeof s.prevScale === 'number') state.prevScale = s.prevScale;
+      if (typeof s.targetLang === 'string') state.targetLang = s.targetLang;
       if (typeof s.hideNetflix === 'boolean') state.hideNetflix = s.hideNetflix;
       if (typeof s.enabled === 'boolean') state.enabled = s.enabled;
     } catch (err) {}
@@ -77,6 +80,7 @@
         scrollSeek: state.scrollSeek,
         showPrev: state.showPrev,
         prevScale: state.prevScale,
+        targetLang: state.targetLang,
         hideNetflix: state.hideNetflix,
         enabled: state.enabled
       }));

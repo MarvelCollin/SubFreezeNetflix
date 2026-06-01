@@ -26,7 +26,15 @@
     ui.overlay.appendChild(ui.prevBox);
     ui.overlay.appendChild(ui.line1);
     ui.overlay.appendChild(ui.line2);
+
+    [ui.line1, ui.line2, ui.linePrev1, ui.linePrev2].forEach(function (el) {
+      SF.attachWordHandler(el);
+    });
   };
+
+  function setText(el, text) {
+    if (el.textContent !== text) el.textContent = text;
+  }
 
   SF.updateHideStyle = function (active) {
     SF.ui.hideStyle.textContent = active
@@ -49,11 +57,11 @@
     ui.overlay.style.width = rect.width + 'px';
     ui.overlay.style.height = rect.height + 'px';
 
-    const time = (typeof timeOverride === 'number') ? timeOverride : video.currentTime;
+    const time = (typeof timeOverride === 'number') ? timeOverride : SF.effectiveTime(video);
     const text1 = SF.findCue(state.cues[0], time);
     const text2 = SF.findCue(state.cues[1], time);
-    ui.line1.textContent = text1;
-    ui.line2.textContent = text2;
+    setText(ui.line1, text1);
+    setText(ui.line2, text2);
     ui.line1.style.display = text1 ? 'block' : 'none';
     ui.line2.style.display = text2 ? 'block' : 'none';
     ui.line1.style.fontSize = Math.round(rect.height * state.scale[0] / 100) + 'px';
@@ -66,8 +74,8 @@
       if (state.cues[1].length) prev2 = SF.findPrevCue(state.cues[1], time);
     }
     const prevPx = Math.round(rect.height * state.prevScale / 100) + 'px';
-    ui.linePrev1.textContent = prev1;
-    ui.linePrev2.textContent = prev2;
+    setText(ui.linePrev1, prev1);
+    setText(ui.linePrev2, prev2);
     ui.linePrev1.style.display = prev1 ? 'block' : 'none';
     ui.linePrev2.style.display = prev2 ? 'block' : 'none';
     ui.linePrev1.style.fontSize = prevPx;
